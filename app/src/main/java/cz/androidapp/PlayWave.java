@@ -12,9 +12,10 @@ import com.jjoe64.graphview.series.LineGraphSeries;
  */
 public class PlayWave {
 
-    private final int SAMPLE_RATE = 44100;
+    private final int SAMPLE_RATE = 44100; //samples per second
     private AudioTrack mAudio;
-    private int sampleCount;
+    private int sampleCount; //samples of one period
+    private short amplitude = 32767;
 //    public boolean isRunnable() {
 //        return isRunnable;
 //    }
@@ -28,6 +29,22 @@ public class PlayWave {
     public PlayWave() {
         int buffsize = AudioTrack.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
         mAudio = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, buffsize, AudioTrack.MODE_STATIC); //AudioTrack.MODE_STREAM
+    }
+
+
+    public void play(int frequency) {
+        sampleCount = (int) (float) SAMPLE_RATE / frequency; //kolik samplů má jedna perioda
+        short samples[] = new short[sampleCount]; //pole samplů
+        double twopi = 8. * Math.atan(1.);
+        double phase = 0.0; //začátek fáze
+        for (int i = 0; i < sampleCount; i++) { //vypočet periody pro sinus
+            samples[i] = (short) (amplitude * Math.sin(phase)); //amplituda fáze pro sampl
+            phase += twopi * frequency / SAMPLE_RATE;  //inkrement fáze
+        }
+        mAudio.write(samples, 0, sampleCount);
+        mAudio.reloadStaticData();
+        mAudio.setLoopPoints(0, sampleCount, 1);
+        mAudio.play();
     }
 
     public void setWave(int delkaPeriody, byte pocetPulsu){
@@ -104,3 +121,30 @@ public class PlayWave {
 //        this.isRunnable = false;
     }
 }
+
+/* pause audio po odpojení sluchátek
+private class BecomingNoisyReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
+            // Pause the playback
+        }
+    }
+}
+private IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+private BecomingNoisyReceiver myNoisyAudioStreamReceiver = new BecomingNoisyReceiver();
+
+MediaSessionCompat.Callback callback = new
+MediaSessionCompat.Callback() {
+  @Override
+  public void onPlay() {
+    registerReceiver(myNoisyAudioStreamReceiver, intentFilter);
+  }
+
+  @Override
+  public void onStop() {
+    unregisterReceiver(myNoisyAudioStreamReceiver);
+  }
+}
+
+*/
