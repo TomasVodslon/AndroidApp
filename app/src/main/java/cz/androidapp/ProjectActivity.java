@@ -1,4 +1,4 @@
-package com.project.myapplication;
+package cz.androidapp;
 
 import android.widget.SeekBar;
 import android.widget.TextView;
