@@ -20,17 +20,20 @@ import android.widget.TextView;
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
  */
-public class FullscreenActivity extends AppCompatActivity  {
+public class FullscreenActivity extends AppCompatActivity implements SensorEventListener {
 
     PlayWave wave = new PlayWave();
     int progressValue = 1000;
     int minValue = 200;
     TextView displayFrequency;
     SeekBar seekBar1;
-    private long lastUpdate;
 
-    private static SensorManager sensorService;
-    private Sensor sensor;
+    //Sensor
+    private SensorManager mSensorManager;
+    Sensor accelerometer;
+    Sensor magnetometer;
+    Float azimut;
+
     /**
      * Whether or not the system UI should be auto-hidden after
      * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -126,23 +129,9 @@ public class FullscreenActivity extends AppCompatActivity  {
         findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener);
 
         //Registrace sensoru
-        sensorService = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        sensor = sensorService.getDefaultSensor(Sensor.TYPE_PRESSURE);
-
-        //začátek počítadla, kvůli brždění
-        lastUpdate = System.currentTimeMillis();
-
-
-        if (sensor != null) {
-            sensorService.registerListener(mySensorEventListener, sensor,
-                    SensorManager.SENSOR_DELAY_NORMAL);
-            Log.i("Compass MainActivity", "Registerered for ORIENTATION Sensor");
-        } else {
-            Log.e("Compass MainActivity", "Registerered for ORIENTATION Sensor");
-
-            finish();
-        }
-
+        mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+        accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        magnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
     }
 
     @Override
@@ -229,35 +218,39 @@ public class FullscreenActivity extends AppCompatActivity  {
         );
     }
 
-    private SensorEventListener mySensorEventListener = new SensorEventListener() {
 
-        @Override
-        public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mSensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);
+        mSensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_UI);
+    }
 
-        @Override
-        public void onSensorChanged(SensorEvent event) {
+    float[] mGravity;
+    float[] mGeomagnetic;
+    @Override
+    public void onSensorChanged(SensorEvent event) {
 
-            long actualTime = event.timestamp;
-            float[] values1 = event.values;
-            Log.d("actualTime",String.valueOf(actualTime));
-            long temp = actualTime - lastUpdate;
-            Log.d("temp",String.valueOf(temp));
-            if(temp > 5000000) {
 
-                Log.d("Value 0:", String.valueOf(values1[0]));
-                Log.d("Value 1:", String.valueOf(values1[1]));
-                Log.d("Value 2:", String.valueOf(values1[2]));
-                Log.d("čas",String.valueOf(lastUpdate));
-                lastUpdate = actualTime;
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
+            mGravity = event.values;
+        if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
+            mGeomagnetic = event.values;
+        if (mGravity != null && mGeomagnetic != null) {
+            float R[] = new float[9];
+            float I[] = new float[9];
+            boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
+            if (success) {
+                float orientation[] = new float[3];
+                SensorManager.getOrientation(R, orientation);
+                azimut = orientation[0]; // orientation contains: azimut, pitch and roll
+                Log.d("azimut", String.valueOf(azimut));
             }
-
-            /*float[] r = new float[12];
-            float[] values = new float[12];
-
-            sensorService.getOrientation(r,values);
-*/
-
         }
-    };
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int i) {
+
+    }
 }
