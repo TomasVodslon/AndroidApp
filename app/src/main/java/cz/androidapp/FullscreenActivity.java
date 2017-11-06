@@ -7,12 +7,20 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.SeekBar;
+import android.widget.TextView;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
  */
 public class FullscreenActivity extends AppCompatActivity {
+
+    PlayWave wave = new PlayWave();
+    int progressValue = 1000;
+    int minValue = 200;
+    TextView displayFrequency;
+    SeekBar seekBar1;
     /**
      * Whether or not the system UI should be auto-hidden after
      * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -111,7 +119,7 @@ public class FullscreenActivity extends AppCompatActivity {
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
-
+         setSeekBar();
         // Trigger the initial hide() shortly after the activity has been
         // created, to briefly hint to the user that UI controls
         // are available.
@@ -159,5 +167,36 @@ public class FullscreenActivity extends AppCompatActivity {
     private void delayedHide(int delayMillis) {
         mHideHandler.removeCallbacks(mHideRunnable);
         mHideHandler.postDelayed(mHideRunnable, delayMillis);
+    }
+
+    public void setSeekBar(){
+
+        seekBar1 = (SeekBar)findViewById(R.id.seekBar1);
+        displayFrequency = (TextView)findViewById(R.id.textView);
+        displayFrequency.setText(String.valueOf(minValue)+ " Hz");
+        seekBar1.setOnSeekBarChangeListener(
+                new SeekBar.OnSeekBarChangeListener() {
+
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                        progressValue = minValue + progress;
+                        wave.stop();
+                        wave.sinus(progressValue);
+                        //wave.square(progressValue,1);
+                        displayFrequency.setText(String.valueOf(progressValue) + " Hz");
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+                        displayFrequency.setText(String.valueOf(progressValue) + " Hz");
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+                        displayFrequency.setText(String.valueOf(progressValue) + " Hz");
+                        wave.stop();
+                    }
+                }
+        );
     }
 }
