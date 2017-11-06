@@ -1,10 +1,16 @@
 package cz.androidapp;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.SeekBar;
@@ -14,13 +20,17 @@ import android.widget.TextView;
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
  */
-public class FullscreenActivity extends AppCompatActivity {
+public class FullscreenActivity extends AppCompatActivity  {
 
     PlayWave wave = new PlayWave();
     int progressValue = 1000;
     int minValue = 200;
     TextView displayFrequency;
     SeekBar seekBar1;
+    private long lastUpdate;
+
+    private static SensorManager sensorService;
+    private Sensor sensor;
     /**
      * Whether or not the system UI should be auto-hidden after
      * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -94,7 +104,7 @@ public class FullscreenActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        Log.d("MyApp","I am here");
         setContentView(R.layout.activity_fullscreen);
 
         mVisible = true;
@@ -114,6 +124,25 @@ public class FullscreenActivity extends AppCompatActivity {
         // operations to prevent the jarring behavior of controls going away
         // while interacting with the UI.
         findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener);
+
+        //Registrace sensoru
+        sensorService = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        sensor = sensorService.getDefaultSensor(Sensor.TYPE_PRESSURE);
+
+        //začátek počítadla, kvůli brždění
+        lastUpdate = System.currentTimeMillis();
+
+
+        if (sensor != null) {
+            sensorService.registerListener(mySensorEventListener, sensor,
+                    SensorManager.SENSOR_DELAY_NORMAL);
+            Log.i("Compass MainActivity", "Registerered for ORIENTATION Sensor");
+        } else {
+            Log.e("Compass MainActivity", "Registerered for ORIENTATION Sensor");
+
+            finish();
+        }
+
     }
 
     @Override
@@ -199,4 +228,36 @@ public class FullscreenActivity extends AppCompatActivity {
                 }
         );
     }
+
+    private SensorEventListener mySensorEventListener = new SensorEventListener() {
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        }
+
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+
+            long actualTime = event.timestamp;
+            float[] values1 = event.values;
+            Log.d("actualTime",String.valueOf(actualTime));
+            long temp = actualTime - lastUpdate;
+            Log.d("temp",String.valueOf(temp));
+            if(temp > 5000000) {
+
+                Log.d("Value 0:", String.valueOf(values1[0]));
+                Log.d("Value 1:", String.valueOf(values1[1]));
+                Log.d("Value 2:", String.valueOf(values1[2]));
+                Log.d("čas",String.valueOf(lastUpdate));
+                lastUpdate = actualTime;
+            }
+
+            /*float[] r = new float[12];
+            float[] values = new float[12];
+
+            sensorService.getOrientation(r,values);
+*/
+
+        }
+    };
 }
