@@ -244,10 +244,17 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
                 float orientation[] = new float[3];
                 SensorManager.getOrientation(R, orientation);
                 azimut = orientation[0]; // orientation contains: azimut, pitch and roll
-                Log.d("azimut", String.valueOf(azimut));
+                float pitch = orientation[1];
+                // Log.d("azimut", String.valueOf(azimut));
+                Log.d("pitchRad", String.valueOf((pitch)));
+                Log.d("pitch", String.valueOf(Math.toDegrees(pitch)));
+
+
             }
         }
     }
+
+
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
