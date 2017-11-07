@@ -266,6 +266,9 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
                         double degree = Math.toDegrees(pitch);
                         degree = Math.round((90 - degree));
                         Log.d("Roll většá než nula", String.valueOf(degree));
+                        wave.stop();
+                        wave.square(200 + (int)degree*2,1);
+                        displayFrequency.setText(String.valueOf(100 + (int)degree*2) + " Hz");
                     } else {
                         pitch = pitch * -1;
                         double degree = Math.toDegrees(pitch);
