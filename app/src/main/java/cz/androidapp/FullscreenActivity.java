@@ -28,6 +28,8 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
     TextView displayFrequency;
     SeekBar seekBar1;
 
+    long lastTimeUpdate;
+
     //Sensor
     private SensorManager mSensorManager;
     Sensor accelerometer;
@@ -107,13 +109,16 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d("MyApp","I am here");
+        Log.d("MyApp", "I am here");
         setContentView(R.layout.activity_fullscreen);
 
         mVisible = true;
         mControlsView = findViewById(R.id.fullscreen_content_controls);
         mContentView = findViewById(R.id.fullscreen_content);
 
+
+        //Incializace lasttimeupdate
+        lastTimeUpdate = System.currentTimeMillis();
 
         // Set up the user interaction to manually show or hide the system UI.
         mContentView.setOnClickListener(new View.OnClickListener() {
@@ -129,7 +134,7 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
         findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener);
 
         //Registrace sensoru
-        mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
     }
@@ -137,7 +142,7 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
-         setSeekBar();
+        setSeekBar();
         // Trigger the initial hide() shortly after the activity has been
         // created, to briefly hint to the user that UI controls
         // are available.
@@ -187,11 +192,11 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
         mHideHandler.postDelayed(mHideRunnable, delayMillis);
     }
 
-    public void setSeekBar(){
+    public void setSeekBar() {
 
-        seekBar1 = (SeekBar)findViewById(R.id.seekBar1);
-        displayFrequency = (TextView)findViewById(R.id.textView);
-        displayFrequency.setText(String.valueOf(minValue)+ " Hz");
+        seekBar1 = (SeekBar) findViewById(R.id.seekBar1);
+        displayFrequency = (TextView) findViewById(R.id.textView);
+        displayFrequency.setText(String.valueOf(minValue) + " Hz");
         seekBar1.setOnSeekBarChangeListener(
                 new SeekBar.OnSeekBarChangeListener() {
 
@@ -228,9 +233,11 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
 
     float[] mGravity;
     float[] mGeomagnetic;
+
     @Override
     public void onSensorChanged(SensorEvent event) {
 
+        long actualTime = System.currentTimeMillis();
 
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
             mGravity = event.values;
@@ -239,21 +246,61 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
         if (mGravity != null && mGeomagnetic != null) {
             float R[] = new float[9];
             float I[] = new float[9];
-            boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
-            if (success) {
-                float orientation[] = new float[3];
-                SensorManager.getOrientation(R, orientation);
-                azimut = orientation[0]; // orientation contains: azimut, pitch and roll
-                float pitch = orientation[1];
-                // Log.d("azimut", String.valueOf(azimut));
-                Log.d("pitchRad", String.valueOf((pitch)));
-                Log.d("pitch", String.valueOf(Math.toDegrees(pitch)));
+
+            if (actualTime - lastTimeUpdate > 5000) {
+                boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
+
+                //Hodnota která nedává moc smysl, ale je správně bud pozitivní nebo negativní
 
 
+                if (success) {
+                    float values[] = new float[3];
+                    float signum = Math.signum(R[4]);
+
+
+                    SensorManager.getOrientation(R, values);
+                    float pitch = values[1];
+                    if(signum > 0){
+                        // Převod na pozitivní hodnotu
+                        pitch = pitch * -1;
+                        double degree = Math.toDegrees(pitch);
+                        degree = Math.round((90 - degree));
+                        Log.d("Roll většá než nula", String.valueOf(degree));
+                    } else {
+                        pitch = pitch * -1;
+                        double degree = Math.toDegrees(pitch);
+                        degree = Math.round((90 - degree) * -1 );
+                        Log.d("Roll menší než nula", String.valueOf(degree));
+                    }
+
+
+
+                }
+
+                lastTimeUpdate = actualTime;
             }
+
+
         }
     }
 
+    private static final int SENSOR_DELAY = 500 * 1000; // 500ms
+    private static final int FROM_RADS_TO_DEGS = -57;
+
+  /*  private void update(float[] vectors) {
+        float[] rotationMatrix = new float[9];
+        SensorManager.getRotationMatrixFromVector(rotationMatrix, vectors);
+        int worldAxisX = SensorManager.AXIS_X;
+        int worldAxisZ = SensorManager.AXIS_Z;
+        float[] adjustedRotationMatrix = new float[9];
+        SensorManager.remapCoordinateSystem(rotationMatrix, worldAxisX, worldAxisZ, adjustedRotationMatrix);
+        float[] orientation = new float[3];
+        SensorManager.getOrientation(adjustedRotationMatrix, orientation);
+        float pitch = orientation[1] * FROM_RADS_TO_DEGS;
+        float roll = orientation[2] * FROM_RADS_TO_DEGS;
+        Log.d("Pitch: ",String.valueOf(pitch));
+        Log.d("Roll: ", String.valueOf(roll));
+    }*/
 
 
     @Override
