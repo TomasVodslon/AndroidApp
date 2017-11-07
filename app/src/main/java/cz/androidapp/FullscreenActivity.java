@@ -268,7 +268,7 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
                         Log.d("Roll většá než nula", String.valueOf(degree));
                         wave.stop();
                         wave.squarePositive(200 + (int)degree*2,1);
-                        displayFrequency.setText(String.valueOf(200 + (int)degree*2) + " Hz");
+                        displayFrequency.setText(String.valueOf(200 + (int)degree*2) + " Hz +5V 1 ms");
                     } else {
                         pitch = pitch * -1;
                         double degree = Math.toDegrees(pitch);
@@ -276,7 +276,7 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
                         Log.d("Roll menší než nula", String.valueOf(degree));
                         wave.stop();
                         wave.squareNegative(200 + (int)degree*(-2),1);
-                        displayFrequency.setText(String.valueOf(200 + (int)degree*(-2)) + " Hz");
+                        displayFrequency.setText(String.valueOf(200 + (int)degree*(-2)) + " Hz -5V 1 ms");
                     }
 
 
