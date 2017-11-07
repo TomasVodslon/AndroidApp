@@ -24,7 +24,7 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
 
     PlayWave wave = new PlayWave();
     int progressValue = 1000;
-    int minValue = 200;
+    int minValue = 20;
     TextView displayFrequency;
     SeekBar seekBar1;
 
@@ -267,16 +267,16 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
                         degree = Math.round((90 - degree));
                         Log.d("Roll většá než nula", String.valueOf(degree));
                         wave.stop();
-                        wave.squarePositive(200 + (int)degree*2,1);
-                        displayFrequency.setText(String.valueOf(200 + (int)degree*2) + " Hz +5V 1 ms");
+                        wave.squarePositive(20 + (int)degree*1,1);
+                        displayFrequency.setText(String.valueOf(20 + (int)degree*1) + " Hz +5V 1 ms");
                     } else {
                         pitch = pitch * -1;
                         double degree = Math.toDegrees(pitch);
                         degree = Math.round((90 - degree) * -1 );
                         Log.d("Roll menší než nula", String.valueOf(degree));
                         wave.stop();
-                        wave.squareNegative(200 + (int)degree*(-2),1);
-                        displayFrequency.setText(String.valueOf(200 + (int)degree*(-2)) + " Hz -5V 1 ms");
+                        wave.squareNegative(20 + (int)degree*(-1),1);
+                        displayFrequency.setText(String.valueOf(20 + (int)degree*(-1)) + " Hz -5V 1 ms");
                     }
 
 
