@@ -30,14 +30,13 @@ public class PlayWave {
             samples[i] = (short) (amplitude * Math.sin(phase)); //amplituda fáze pro frame
             phase += twopi * frequency / SAMPLE_RATE;  //inkrement fáze
         }
-
         mAudio.write(samples, 0, sampleCount); //write samples to AudioTrack
         // mAudio.reloadStaticData();
         mAudio.setLoopPoints(0, sampleCount, -1); //set loop
         mAudio.play();
     }
 
-    public void square(int frequency, double pulseWidth) {
+    public void squarePositive(int frequency, double pulseWidth) {
         int sampleCount; //samples of one period
         short amplitude = 32767; // amplitude minimum -32767, maximum +32767
         double phase = 0.0; //začátek fáze
@@ -53,8 +52,28 @@ public class PlayWave {
                 samples[i] = 0;
             }
         }
+        mAudio.write(samples, 0, sampleCount); //write samples to AudioTrack
+        // mAudio.reloadStaticData();
+        mAudio.setLoopPoints(0, sampleCount, -1); //set loop
+        mAudio.play();
+    }
 
+    public void squareNegative(int frequency, double pulseWidth) {
+        int sampleCount; //samples of one period
+        short amplitude = -32767; // amplitude minimum -32767, maximum +32767
+        double phase = 0.0; //začátek fáze
+        double twopi = 8. * Math.atan(1.);
 
+        sampleCount = (int) (float) SAMPLE_RATE / frequency; //kolik frame má jedna perioda
+        short samples[] = new short[sampleCount]; //pole frame
+
+        for (int i = 0; i < sampleCount; i++) { //vypočet periody
+            if(i < (int) (pulseWidth * SAMPLE_RATE / 1000)) {
+                samples[i] = amplitude; //amplituda fáze pro frame
+            } else {
+                samples[i] = 0;
+            }
+        }
         mAudio.write(samples, 0, sampleCount); //write samples to AudioTrack
         // mAudio.reloadStaticData();
         mAudio.setLoopPoints(0, sampleCount, -1); //set loop

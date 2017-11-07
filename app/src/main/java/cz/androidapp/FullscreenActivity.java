@@ -247,7 +247,7 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
             float R[] = new float[9];
             float I[] = new float[9];
 
-            if (actualTime - lastTimeUpdate > 5000) {
+            if (actualTime - lastTimeUpdate > 200) {
                 boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
 
                 //Hodnota která nedává moc smysl, ale je správně bud pozitivní nebo negativní
@@ -267,13 +267,16 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
                         degree = Math.round((90 - degree));
                         Log.d("Roll většá než nula", String.valueOf(degree));
                         wave.stop();
-                        wave.square(200 + (int)degree*2,1);
-                        displayFrequency.setText(String.valueOf(100 + (int)degree*2) + " Hz");
+                        wave.squarePositive(200 + (int)degree*2,1);
+                        displayFrequency.setText(String.valueOf(200 + (int)degree*2) + " Hz");
                     } else {
                         pitch = pitch * -1;
                         double degree = Math.toDegrees(pitch);
                         degree = Math.round((90 - degree) * -1 );
                         Log.d("Roll menší než nula", String.valueOf(degree));
+                        wave.stop();
+                        wave.squareNegative(200 + (int)degree*(-2),1);
+                        displayFrequency.setText(String.valueOf(200 + (int)degree*(-2)) + " Hz");
                     }
 
 
