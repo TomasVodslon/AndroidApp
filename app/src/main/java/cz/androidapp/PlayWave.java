@@ -3,6 +3,7 @@ package cz.androidapp;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.provider.MediaStore;
 
 /**
  * Created by krnansky on 18.5.2016.
@@ -12,18 +13,33 @@ public class PlayWave {
     private final int SAMPLE_RATE = 44100; //samples per second
     private AudioTrack mAudio;
 
-    public PlayWave() {
-        int buffsize = AudioTrack.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
-        mAudio = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, buffsize, AudioTrack.MODE_STATIC); //AudioTrack.MODE_STREAM
+    public enum channelOut {FRONT_LEFT (4), FRONT_RIGHT(8), MONO (4);
+        private int channel;
+        channelOut (int channel) {
+            this.channel = channel;
+        }
+        public int getChannel() {
+            return this.channel;
+            }
     }
 
-    public void sinus(int frequency) {
+    public PlayWave() {
+       int buffsize = AudioTrack.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
+       mAudio = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLE_RATE, AudioFormat.CHANNEL_OUT_FRONT_RIGHT, AudioFormat.ENCODING_PCM_16BIT, buffsize, AudioTrack.MODE_STATIC); //AudioTrack.MODE_STREAM
+    }
+
+    public PlayWave(channelOut channel) {
+        int buffsize = AudioTrack.getMinBufferSize(SAMPLE_RATE,channel.getChannel(), AudioFormat.ENCODING_PCM_16BIT);
+        mAudio = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLE_RATE, channel.getChannel(), AudioFormat.ENCODING_PCM_16BIT, buffsize, AudioTrack.MODE_STATIC); //AudioTrack.MODE_STREAM
+    }
+
+    public void sinus(double frequency) {
         int sampleCount; //samples of one period
         short amplitude = 32767; // amplitude minimum -32767, maximum +32767
         double phase = 0.0; //začátek fáze
-        double twopi = 8. * Math.atan(1.);
+        double twopi = 2*Math.PI;
 
-        sampleCount = (int) (float) SAMPLE_RATE / frequency; //kolik frame má jedna perioda
+        sampleCount = (int)((float)SAMPLE_RATE / frequency); //kolik frame má jedna perioda
         short samples[] = new short[sampleCount]; //pole frame
 
         for (int i = 0; i < sampleCount; i++) { //vypočet periody sinus
@@ -36,13 +52,13 @@ public class PlayWave {
         mAudio.play();
     }
 
-    public void squarePositive(int frequency, double pulseWidth) {
+    public void squarePositive(double frequency, double pulseWidth) {
         int sampleCount; //samples of one period
         short amplitude = 32767; // amplitude minimum -32767, maximum +32767
         double phase = 0.0; //začátek fáze
-        double twopi = 8. * Math.atan(1.);
+        double twopi = 2*Math.PI;
 
-        sampleCount = (int) (float) SAMPLE_RATE / frequency; //kolik frame má jedna perioda
+        sampleCount = (int)((float)SAMPLE_RATE / frequency); //kolik frame má jedna perioda
         short samples[] = new short[sampleCount]; //pole frame
 
         for (int i = 0; i < sampleCount; i++) { //vypočet periody
@@ -58,13 +74,13 @@ public class PlayWave {
         mAudio.play();
     }
 
-    public void squareNegative(int frequency, double pulseWidth) {
+    public void squareNegative(double frequency, double pulseWidth) {
         int sampleCount; //samples of one period
         short amplitude = -32767; // amplitude minimum -32767, maximum +32767
         double phase = 0.0; //začátek fáze
-        double twopi = 8. * Math.atan(1.);
+        double twopi = 2*Math.PI;
 
-        sampleCount = (int) (float) SAMPLE_RATE / frequency; //kolik frame má jedna perioda
+        sampleCount = (int)((float)SAMPLE_RATE / frequency); //kolik frame má jedna perioda
         short samples[] = new short[sampleCount]; //pole frame
 
         for (int i = 0; i < sampleCount; i++) { //vypočet periody

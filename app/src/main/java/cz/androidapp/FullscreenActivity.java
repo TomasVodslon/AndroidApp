@@ -6,6 +6,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.AudioFormat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -22,7 +23,8 @@ import android.widget.TextView;
  */
 public class FullscreenActivity extends AppCompatActivity implements SensorEventListener {
 
-    PlayWave wave = new PlayWave();
+    PlayWave waveLeft = new PlayWave(PlayWave.channelOut.FRONT_LEFT);
+    PlayWave waveRight = new PlayWave(PlayWave.channelOut.FRONT_RIGHT);
     int progressValue = 1000;
     int minValue = 20;
     TextView displayFrequency;
@@ -203,8 +205,8 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
                     @Override
                     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                         progressValue = minValue + progress;
-                        wave.stop();
-                        wave.sinus(progressValue);
+                        waveLeft.stop();
+                        waveLeft.sinus(progressValue);
                         //wave.square(progressValue,1);
                         displayFrequency.setText(String.valueOf(progressValue) + " Hz");
                     }
@@ -217,7 +219,7 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
                     @Override
                     public void onStopTrackingTouch(SeekBar seekBar) {
                         displayFrequency.setText(String.valueOf(progressValue) + " Hz");
-                        wave.stop();
+                        waveLeft.stop();
                     }
                 }
         );
@@ -227,8 +229,8 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
     @Override
     protected void onResume() {
         super.onResume();
-        mSensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);
-        mSensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_UI);
+        mSensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);//DELAY_UI = 60 ms, DELAY_GAME (NORMAL) = 20 ms, DELAY_FASTES = 0 ms
+        mSensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_UI); //DELAY_UI = 60 ms, DELAY_GAME (NORMAL) = 20 ms, DELAY_FASTES = 0 ms
     }
 
     float[] mGravity;
@@ -266,16 +268,16 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
                         double degree = Math.toDegrees(pitch);
                         degree = Math.round((90 - degree));
                         Log.d("Roll většá než nula", String.valueOf(degree));
-                        wave.stop();
-                        wave.squarePositive(20 + (int)degree*1,1);
+                        waveRight.stop();
+                        waveRight.squarePositive(20 + (int)degree*1,1);
                         displayFrequency.setText(String.valueOf(20 + (int)degree*1) + " Hz +5V 1 ms");
                     } else {
                         pitch = pitch * -1;
                         double degree = Math.toDegrees(pitch);
                         degree = Math.round((90 - degree) * -1 );
                         Log.d("Roll menší než nula", String.valueOf(degree));
-                        wave.stop();
-                        wave.squareNegative(20 + (int)degree*(-1),1);
+                        waveLeft.stop();
+                        waveLeft.squareNegative(20 + (int)degree*(-1),1);
                         displayFrequency.setText(String.valueOf(20 + (int)degree*(-1)) + " Hz -5V 1 ms");
                     }
 
