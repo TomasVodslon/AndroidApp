@@ -22,18 +22,18 @@
             android:id="@+id/textView"
             android:layout_gravity="center_horizontal" />
 
-        <SeekBar
+<!--        <SeekBar
             android:layout_width="match_parent"
             android:layout_height="100dp"
             android:id="@+id/seekBar1"
-            android:max="800" />
+            android:max="800" />-->
 
 
 
     <TextView
         android:id="@+id/fullscreen_content"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:gravity="center"
         android:keepScreenOn="true"
         android:text="@string/dummy_content"

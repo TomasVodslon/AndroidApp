@@ -1,12 +1,13 @@
 package cz.androidapp;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioTrack;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -23,12 +24,24 @@ import android.widget.TextView;
  */
 public class FullscreenActivity extends AppCompatActivity implements SensorEventListener {
 
-    PlayWave waveLeft = new PlayWave(PlayWave.channelOut.FRONT_LEFT);
-    PlayWave waveRight = new PlayWave(PlayWave.channelOut.FRONT_RIGHT);
-    int progressValue = 1000;
-    int minValue = 20;
+ //   int progressValue = 1000;
+//    int minValue = 20;
+
+    private int SAMPLE_RATE = 44100; //samples per second
+    private int CHANNEL_OUT = AudioFormat.CHANNEL_OUT_MONO;
+    private int ENCODING = AudioFormat.ENCODING_PCM_16BIT;
+    private int STREAM = AudioManager.STREAM_MUSIC;
+    private int MODE = AudioTrack.MODE_STREAM; //AudioTrack.MODE_STREAM
+    private int BUFFER_SIZE = AudioTrack.getMinBufferSize(SAMPLE_RATE, CHANNEL_OUT, ENCODING);
+
+    AudioTrack sound = new AudioTrack(STREAM, SAMPLE_RATE, CHANNEL_OUT, ENCODING, BUFFER_SIZE, MODE);
+    Thread soundThread;
+    boolean m_stop = false;
+
+    //UI Content
     TextView displayFrequency;
-    SeekBar seekBar1;
+    //  SeekBar seekBar1;
+
 
     long lastTimeUpdate;
 
@@ -118,7 +131,6 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
         mControlsView = findViewById(R.id.fullscreen_content_controls);
         mContentView = findViewById(R.id.fullscreen_content);
 
-
         //Incializace lasttimeupdate
         lastTimeUpdate = System.currentTimeMillis();
 
@@ -135,6 +147,13 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
         // while interacting with the UI.
         findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener);
 
+        //setSeekBar();
+        displayFrequency = (TextView) findViewById(R.id.textView);
+        sound.play();
+        soundThread = new Thread(soundGenerator);
+        soundThread.start();
+
+
         //Registrace sensoru
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -144,7 +163,6 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
-        setSeekBar();
         // Trigger the initial hide() shortly after the activity has been
         // created, to briefly hint to the user that UI controls
         // are available.
@@ -194,10 +212,10 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
         mHideHandler.postDelayed(mHideRunnable, delayMillis);
     }
 
-    public void setSeekBar() {
+/*    public void setSeekBar() {
 
         seekBar1 = (SeekBar) findViewById(R.id.seekBar1);
-        displayFrequency = (TextView) findViewById(R.id.textView);
+
         displayFrequency.setText(String.valueOf(minValue) + " Hz");
         seekBar1.setOnSeekBarChangeListener(
                 new SeekBar.OnSeekBarChangeListener() {
@@ -205,8 +223,8 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
                     @Override
                     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                         progressValue = minValue + progress;
-                        waveLeft.stop();
-                        waveLeft.sinus(progressValue);
+                        //wave.stop();
+                        //wave.sinus(progressValue);
                         //wave.square(progressValue,1);
                         displayFrequency.setText(String.valueOf(progressValue) + " Hz");
                     }
@@ -219,12 +237,40 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
                     @Override
                     public void onStopTrackingTouch(SeekBar seekBar) {
                         displayFrequency.setText(String.valueOf(progressValue) + " Hz");
-                        waveLeft.stop();
+                        //wave.stop();
                     }
                 }
         );
+    }*/
+
+    private short[] sinus(double frequency, int sampleRate) {
+        int sampleCount; //samples of one period
+        short amplitude = 32767; // amplitude minimum -32767, maximum +32767
+        double inkrement = 0.0; //začátek fáze
+        double twopi = 2*Math.PI;
+
+        sampleCount = (int)((float)sampleRate / frequency); //kolik frame má jedna perioda
+        short samples[] = new short[sampleCount]; //pole frame
+
+        for (int i = 0; i < sampleCount; i++) { //vypočet periody sinus
+            samples[i] = (short) (amplitude * Math.sin(inkrement)); //amplituda fáze pro frame
+            inkrement += twopi * frequency / sampleRate;  //inkrement fáze
+        }
+        return samples;
     }
 
+    Runnable soundGenerator = new Runnable()
+    {
+        public void run()
+        {
+            Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
+            while(!m_stop)
+            {
+                short samples[] = sinus(200,SAMPLE_RATE);
+                sound.write(samples, 0, samples.length);
+            }
+        }
+    };
 
     @Override
     protected void onResume() {
@@ -268,17 +314,17 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
                         double degree = Math.toDegrees(pitch);
                         degree = Math.round((90 - degree));
                         Log.d("Roll většá než nula", String.valueOf(degree));
-                        waveRight.stop();
-                        waveRight.squarePositive(20 + (int)degree*1,1);
-                        displayFrequency.setText(String.valueOf(20 + (int)degree*1) + " Hz +5V 1 ms");
+                        //wave.stop();
+                        //wave.squarePositive(20 + (int)degree*1,1);
+                        displayFrequency.setText(String.valueOf(degree + " °"));
                     } else {
                         pitch = pitch * -1;
                         double degree = Math.toDegrees(pitch);
                         degree = Math.round((90 - degree) * -1 );
                         Log.d("Roll menší než nula", String.valueOf(degree));
-                        waveLeft.stop();
-                        waveLeft.squareNegative(20 + (int)degree*(-1),1);
-                        displayFrequency.setText(String.valueOf(20 + (int)degree*(-1)) + " Hz -5V 1 ms");
+                        //wave.stop();
+                        //wave.squareNegative(20 + (int)degree*(-1),1);
+                        displayFrequency.setText(String.valueOf(degree + " °"));
                     }
 
 
