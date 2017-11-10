@@ -5,9 +5,6 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.media.AudioFormat;
-import android.media.AudioManager;
-import android.media.AudioTrack;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -15,6 +12,7 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 /**
@@ -22,23 +20,11 @@ import android.widget.TextView;
  * status bar and navigation/system bar) with user interaction.
  */
 public class FullscreenActivity extends AppCompatActivity implements SensorEventListener {
-    private int SAMPLE_RATE = 44100; //samples per second
-    private int CHANNEL_OUT = AudioFormat.CHANNEL_OUT_STEREO;
-    private int ENCODING = AudioFormat.ENCODING_PCM_16BIT;
-    private int STREAM = AudioManager.STREAM_MUSIC;
-    private int MODE = AudioTrack.MODE_STREAM; //AudioTrack.MODE_STREAM
-    private int BUFFER_SIZE = AudioTrack.getMinBufferSize(SAMPLE_RATE, CHANNEL_OUT, ENCODING);
-    private double FREQUENCY = 200;
-
-    AudioTrack sound = new AudioTrack(STREAM, SAMPLE_RATE, CHANNEL_OUT, ENCODING, BUFFER_SIZE, MODE);
-    Thread soundThread;
-    boolean soundStop = false;
-
     //UI Content
     TextView displayDegree;
     TextView displayFrequency;
-    //  SeekBar seekBar1;
-
+    Button dummyButton;
+    SoundCreator sound = new SoundCreator();
 
     long lastTimeUpdate;
 
@@ -143,15 +129,20 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
         // operations to prevent the jarring behavior of controls going away
         // while interacting with the UI.
         findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener);
-
-        //setSeekBar();
+        dummyButton = (Button) findViewById(R.id.dummy_button);
         displayDegree = (TextView) findViewById(R.id.textView1);
         displayFrequency = (TextView) findViewById(R.id.textView2);
-        sound.play();
-        soundThread = new Thread(soundGenerator);
-        soundThread.start();
 
-
+dummyButton.setOnClickListener(new View.OnClickListener() {
+    @Override
+    public void onClick(View view) {
+        if (sound.isPlaying()){
+            sound.stop();
+        }else{
+          // sound.playLast();
+        }
+    }
+});
         //Registrace sensoru
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -210,89 +201,6 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
         mHideHandler.postDelayed(mHideRunnable, delayMillis);
     }
 
-/*    public void setSeekBar() {
-
-        seekBar1 = (SeekBar) findViewById(R.id.seekBar1);
-
-        displayDegree.setText(String.valueOf(minValue) + " Hz");
-        seekBar1.setOnSeekBarChangeListener(
-                new SeekBar.OnSeekBarChangeListener() {
-
-                    @Override
-                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                        progressValue = minValue + progress;
-                        //wave.stop();
-                        //wave.sinus(progressValue);
-                        //wave.square(progressValue,1);
-                        displayDegree.setText(String.valueOf(progressValue) + " Hz");
-                    }
-
-                    @Override
-                    public void onStartTrackingTouch(SeekBar seekBar) {
-                        displayDegree.setText(String.valueOf(progressValue) + " Hz");
-                    }
-
-                    @Override
-                    public void onStopTrackingTouch(SeekBar seekBar) {
-                        displayDegree.setText(String.valueOf(progressValue) + " Hz");
-                        //wave.stop();
-                    }
-                }
-        );
-    }*/
-
-/*    private short[] sinus(double frequency, int sampleRate) {
-        int sampleCount; //samples of one period
-        short amplitude = 32767; // amplitude minimum -32767, maximum +32767
-        double inkrement = 0.0; //začátek fáze
-        double twopi = 2 * Math.PI;
-
-        sampleCount = (int)((float)sampleRate / frequency); //kolik frame má jedna perioda
-        short samples[] = new short[sampleCount]; //pole frame
-
-        for (int i = 0; i < sampleCount; i =+ 2) { //vypočet periody sinus
-            samples[i+1] = (short) (amplitude * Math.sin(inkrement)); //amplituda fáze pro frame
-            inkrement += twopi * frequency / sampleRate;  //inkrement fáze
-        }
-        return samples;
-    }*/
-
-    private short[] square(double frequency, double pulseWidth) {
-        int sampleCount; //samples of one period
-        short ampRight = 32767; // amplitude minimum -32767, maximum +32767
-        short ampLeft = 15000;
-
-        sampleCount = 2*(int) ((float) SAMPLE_RATE / frequency); //kolik frame má jedna perioda
-        short samples[] = new short[sampleCount]; //pole frame
-
-        for (int i = 0; i < sampleCount; i += 2) {
-            if(i < (int) (pulseWidth * SAMPLE_RATE / 1000)) {
-                samples[i + 1] = ampLeft; //amplituda fáze pro frame -levý
-                samples[i + 0] = ampRight; //amplituda fáze pro frame -pravý
-            } else {
-                samples[i + 1] = ampLeft;
-                samples[i + 0] = 0;
-            }
-
-        }
-        return samples;
-    }
-
-    Runnable soundGenerator = new Runnable()
-    {
-        public void run()
-        {
-            Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
-            while(!soundStop)
-            {
-           //     short samples[] = sinus(FREQUENCY,SAMPLE_RATE);
-                short samples[] = square(FREQUENCY,1);
-
-                sound.write(samples, 0, samples.length);
-            }
-        }
-    };
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -335,17 +243,17 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
                         double degree = Math.toDegrees(pitch);
                         degree = Math.round((90 - degree));
                         Log.d("Roll většá než nula", String.valueOf(degree));
-                        FREQUENCY = 100+degree*2;
+                        sound.playSquare(100+degree*2, 1);
                         displayDegree.setText(String.valueOf(degree) + " °");
-                        displayFrequency.setText(String.valueOf(FREQUENCY) + " Hz, pulse 1 ms");
+                        displayFrequency.setText(String.valueOf(100+degree*2) + " Hz, pulse 1 ms");
                     } else {
                         pitch = pitch * -1;
                         double degree = Math.toDegrees(pitch);
                         degree = Math.round((90 - degree) * -1 );
                         Log.d("Roll menší než nula", String.valueOf(degree));
-                        FREQUENCY = 100-degree*2;
+                        sound.playSquare(100-degree*2,1);
                         displayDegree.setText(String.valueOf(degree) + " °");
-                        displayFrequency.setText(String.valueOf(FREQUENCY) + " Hz, pulse 1 ms");
+                        displayFrequency.setText(String.valueOf(100-degree*2) + " Hz, pulse 1 ms");
                     }
 
                 }
