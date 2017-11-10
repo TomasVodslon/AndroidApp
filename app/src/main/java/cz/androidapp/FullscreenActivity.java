@@ -22,12 +22,8 @@ import android.widget.TextView;
  * status bar and navigation/system bar) with user interaction.
  */
 public class FullscreenActivity extends AppCompatActivity implements SensorEventListener {
-
- //   int progressValue = 1000;
-//    int minValue = 20;
-
     private int SAMPLE_RATE = 44100; //samples per second
-    private int CHANNEL_OUT = AudioFormat.CHANNEL_OUT_MONO;
+    private int CHANNEL_OUT = AudioFormat.CHANNEL_OUT_STEREO;
     private int ENCODING = AudioFormat.ENCODING_PCM_16BIT;
     private int STREAM = AudioManager.STREAM_MUSIC;
     private int MODE = AudioTrack.MODE_STREAM; //AudioTrack.MODE_STREAM
@@ -36,7 +32,7 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
 
     AudioTrack sound = new AudioTrack(STREAM, SAMPLE_RATE, CHANNEL_OUT, ENCODING, BUFFER_SIZE, MODE);
     Thread soundThread;
-    boolean m_stop = false;
+    boolean soundStop = false;
 
     //UI Content
     TextView displayDegree;
@@ -245,47 +241,53 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
         );
     }*/
 
-    private short[] sinus(double frequency, int sampleRate) {
+/*    private short[] sinus(double frequency, int sampleRate) {
         int sampleCount; //samples of one period
         short amplitude = 32767; // amplitude minimum -32767, maximum +32767
         double inkrement = 0.0; //začátek fáze
-        double twopi = 2*Math.PI;
+        double twopi = 2 * Math.PI;
 
         sampleCount = (int)((float)sampleRate / frequency); //kolik frame má jedna perioda
         short samples[] = new short[sampleCount]; //pole frame
 
-        for (int i = 0; i < sampleCount; i++) { //vypočet periody sinus
-            samples[i] = (short) (amplitude * Math.sin(inkrement)); //amplituda fáze pro frame
+        for (int i = 0; i < sampleCount; i =+ 2) { //vypočet periody sinus
+            samples[i+1] = (short) (amplitude * Math.sin(inkrement)); //amplituda fáze pro frame
             inkrement += twopi * frequency / sampleRate;  //inkrement fáze
         }
         return samples;
-    }
-
-/*    // only play sound on left
-for(int i = 0; i < count; i += 2){
-        short sample = (short)(Math.sin(2 * Math.PI * i / (44100.0 / freqHz)) * 0x7FFF);
-        samples[i + 0] = sample;
-        samples[i + 1] = 0;
-    }
-// only play sound on right
-for(int i = 0; i < count; i += 2){
-        short sample = (short)(Math.sin(2 * Math.PI * i / (44100.0 / freqHz)) * 0x7FFF);
-        samples[i + 0] = 0;
-        samples[i + 1] = sample;
     }*/
 
+    private short[] square(double frequency, double pulseWidth) {
+        int sampleCount; //samples of one period
+        short ampRight = 32767; // amplitude minimum -32767, maximum +32767
+        short ampLeft = 15000;
 
+        sampleCount = 2*(int) ((float) SAMPLE_RATE / frequency); //kolik frame má jedna perioda
+        short samples[] = new short[sampleCount]; //pole frame
 
+        for (int i = 0; i < sampleCount; i += 2) {
+            if(i < (int) (pulseWidth * SAMPLE_RATE / 1000)) {
+                samples[i + 1] = ampLeft; //amplituda fáze pro frame -levý
+                samples[i + 0] = ampRight; //amplituda fáze pro frame -pravý
+            } else {
+                samples[i + 1] = ampLeft;
+                samples[i + 0] = 0;
+            }
 
+        }
+        return samples;
+    }
 
     Runnable soundGenerator = new Runnable()
     {
         public void run()
         {
             Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
-            while(!m_stop)
+            while(!soundStop)
             {
-                short samples[] = sinus(FREQUENCY,SAMPLE_RATE);
+           //     short samples[] = sinus(FREQUENCY,SAMPLE_RATE);
+                short samples[] = square(FREQUENCY,1);
+
                 sound.write(samples, 0, samples.length);
             }
         }
@@ -333,24 +335,18 @@ for(int i = 0; i < count; i += 2){
                         double degree = Math.toDegrees(pitch);
                         degree = Math.round((90 - degree));
                         Log.d("Roll většá než nula", String.valueOf(degree));
-                        FREQUENCY = 200+degree*2;
-                        //wave.stop();
-                        //wave.squarePositive(20 + (int)degree*1,1);
+                        FREQUENCY = 100+degree*2;
                         displayDegree.setText(String.valueOf(degree) + " °");
-                        displayFrequency.setText(String.valueOf(FREQUENCY) + " Hz");
+                        displayFrequency.setText(String.valueOf(FREQUENCY) + " Hz, pulse 1 ms");
                     } else {
                         pitch = pitch * -1;
                         double degree = Math.toDegrees(pitch);
                         degree = Math.round((90 - degree) * -1 );
                         Log.d("Roll menší než nula", String.valueOf(degree));
-                        FREQUENCY = 200-degree*2;
-                        //wave.stop();
-                        //wave.squareNegative(20 + (int)degree*(-1),1);
+                        FREQUENCY = 100-degree*2;
                         displayDegree.setText(String.valueOf(degree) + " °");
-                        displayFrequency.setText(String.valueOf(FREQUENCY) + " Hz");
+                        displayFrequency.setText(String.valueOf(FREQUENCY) + " Hz, pulse 1 ms");
                     }
-
-
 
                 }
 
