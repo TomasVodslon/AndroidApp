@@ -24,8 +24,7 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
     TextView displayDegree;
     TextView displayFrequency;
     Button dummyButton;
-    SoundCreator sound = new SoundCreator();
-
+    SoundCreator sound = new SoundCreator(SoundCreator.CHANNEL_LEFT);
     long lastTimeUpdate;
 
     //Sensor
@@ -134,6 +133,7 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
         displayFrequency = (TextView) findViewById(R.id.textView2);
 
 dummyButton.setOnClickListener(new View.OnClickListener() {
+    @SuppressLint("WrongConstant")
     @Override
     public void onClick(View view) {
         if (sound.isPlaying()){
