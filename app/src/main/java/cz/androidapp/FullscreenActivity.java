@@ -19,9 +19,10 @@ public class FullscreenActivity extends AppCompatActivity  {
     TextView displayDegree;
     TextView displayFrequency;
     Button dummyButton;
-    SoundCreator sound = new SoundCreator();
+    long lastTimeUpdate;
+    SoundCreator sound = new SoundCreator(SoundCreator.CHANNEL_LEFT);
     TiltedSensor tiltedSensor;
-
+    SoundCreator sound = new SoundCreator();
 
 
 
