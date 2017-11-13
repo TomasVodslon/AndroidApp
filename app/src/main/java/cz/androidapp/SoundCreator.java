@@ -17,7 +17,7 @@ public class SoundCreator {
     private int BUFFER_SIZE = AudioTrack.getMinBufferSize(SAMPLE_RATE, CHANNEL_OUT, ENCODING);
     private double FREQUENCY = 200; //Hz
     private double PULSE_WIDTH = 1; //ms
-
+    //test
     public boolean isPlaying() {
         return IsPlaying;
     }

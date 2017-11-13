@@ -1,15 +1,10 @@
 package cz.androidapp;
 
 import android.annotation.SuppressLint;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
@@ -19,20 +14,17 @@ import android.widget.TextView;
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
  */
-public class FullscreenActivity extends AppCompatActivity implements SensorEventListener {
+public class FullscreenActivity extends AppCompatActivity  {
     //UI Content
     TextView displayDegree;
     TextView displayFrequency;
     Button dummyButton;
     SoundCreator sound = new SoundCreator();
+    TiltedSensor tiltedSensor;
 
-    long lastTimeUpdate;
 
-    //Sensor
-    private SensorManager mSensorManager;
-    Sensor accelerometer;
-    Sensor magnetometer;
-    Float azimut;
+
+
 
     /**
      * Whether or not the system UI should be auto-hidden after
@@ -107,7 +99,6 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d("MyApp", "I am here");
         setContentView(R.layout.activity_fullscreen);
 
         mVisible = true;
@@ -115,7 +106,7 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
         mContentView = findViewById(R.id.fullscreen_content);
 
         //Incializace lasttimeupdate
-        lastTimeUpdate = System.currentTimeMillis();
+
 
         // Set up the user interaction to manually show or hide the system UI.
         mContentView.setOnClickListener(new View.OnClickListener() {
@@ -125,6 +116,8 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
             }
         });
 
+        tiltedSensor = new TiltedSensor(this);
+
         // Upon interacting with UI controls, delay any scheduled hide()
         // operations to prevent the jarring behavior of controls going away
         // while interacting with the UI.
@@ -133,20 +126,17 @@ public class FullscreenActivity extends AppCompatActivity implements SensorEvent
         displayDegree = (TextView) findViewById(R.id.textView1);
         displayFrequency = (TextView) findViewById(R.id.textView2);
 
-dummyButton.setOnClickListener(new View.OnClickListener() {
-    @Override
-    public void onClick(View view) {
-        if (sound.isPlaying()){
-            sound.stop();
-        }else{
-          // sound.playLast();
-        }
-    }
-});
-        //Registrace sensoru
-        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        magnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        dummyButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (sound.isPlaying()) {
+                    sound.stop();
+                } else {
+                    // sound.playLast();
+                }
+            }
+        });
+
     }
 
     @Override
@@ -204,88 +194,13 @@ dummyButton.setOnClickListener(new View.OnClickListener() {
     @Override
     protected void onResume() {
         super.onResume();
-        mSensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);//DELAY_UI = 60 ms, DELAY_GAME (NORMAL) = 20 ms, DELAY_FASTES = 0 ms
-        mSensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_UI); //DELAY_UI = 60 ms, DELAY_GAME (NORMAL) = 20 ms, DELAY_FASTES = 0 ms
+        tiltedSensor.RegisterSensor();
     }
 
     float[] mGravity;
     float[] mGeomagnetic;
 
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-
-        long actualTime = System.currentTimeMillis();
-
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
-            mGravity = event.values;
-        if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
-            mGeomagnetic = event.values;
-        if (mGravity != null && mGeomagnetic != null) {
-            float R[] = new float[9];
-            float I[] = new float[9];
-
-            if (actualTime - lastTimeUpdate > 200) {
-                boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
-
-                //Hodnota která nedává moc smysl, ale je správně bud pozitivní nebo negativní
 
 
-                if (success) {
-                    float values[] = new float[3];
-                    float signum = Math.signum(R[4]);
 
-
-                    SensorManager.getOrientation(R, values);
-                    float pitch = values[1];
-                    if(signum > 0){
-                        // Převod na pozitivní hodnotu
-                        pitch = pitch * -1;
-                        double degree = Math.toDegrees(pitch);
-                        degree = Math.round((90 - degree));
-                        Log.d("Roll většá než nula", String.valueOf(degree));
-                        sound.playSquare(100+degree*2, 1);
-                        displayDegree.setText(String.valueOf(degree) + " °");
-                        displayFrequency.setText(String.valueOf(100+degree*2) + " Hz, pulse 1 ms");
-                    } else {
-                        pitch = pitch * -1;
-                        double degree = Math.toDegrees(pitch);
-                        degree = Math.round((90 - degree) * -1 );
-                        Log.d("Roll menší než nula", String.valueOf(degree));
-                        sound.playSquare(100-degree*2,1);
-                        displayDegree.setText(String.valueOf(degree) + " °");
-                        displayFrequency.setText(String.valueOf(100-degree*2) + " Hz, pulse 1 ms");
-                    }
-
-                }
-
-                lastTimeUpdate = actualTime;
-            }
-
-
-        }
-    }
-
-    private static final int SENSOR_DELAY = 500 * 1000; // 500ms
-    private static final int FROM_RADS_TO_DEGS = -57;
-
-  /*  private void update(float[] vectors) {
-        float[] rotationMatrix = new float[9];
-        SensorManager.getRotationMatrixFromVector(rotationMatrix, vectors);
-        int worldAxisX = SensorManager.AXIS_X;
-        int worldAxisZ = SensorManager.AXIS_Z;
-        float[] adjustedRotationMatrix = new float[9];
-        SensorManager.remapCoordinateSystem(rotationMatrix, worldAxisX, worldAxisZ, adjustedRotationMatrix);
-        float[] orientation = new float[3];
-        SensorManager.getOrientation(adjustedRotationMatrix, orientation);
-        float pitch = orientation[1] * FROM_RADS_TO_DEGS;
-        float roll = orientation[2] * FROM_RADS_TO_DEGS;
-        Log.d("Pitch: ",String.valueOf(pitch));
-        Log.d("Roll: ", String.valueOf(roll));
-    }*/
-
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-
-    }
 }
