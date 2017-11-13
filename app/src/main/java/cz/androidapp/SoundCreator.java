@@ -12,7 +12,7 @@ import java.lang.annotation.RetentionPolicy;
  * Created by krnansky on 10.11.2017.
  */
 
-public class SoundCreator {
+public class SoundCreator implements Observer {
     public static final int CHANNEL_LEFT = 1;
     public static final int CHANNEL_RIGHT = 0;
     public static final int CHANNEL_BOTH = 2;
@@ -32,7 +32,12 @@ public class SoundCreator {
     private AudioTrack sound;
     private Thread soundThread;
 
-// Declare the @IntDef for these constants:
+    @Override
+    public void update(double degree) {
+        playSquare(100 + degree * 2, 1);
+    }
+
+    // Declare the @IntDef for these constants:
     @Retention(RetentionPolicy.SOURCE)
     @IntDef ({CHANNEL_RIGHT, CHANNEL_LEFT, CHANNEL_BOTH})
     private @interface Channels{}

@@ -14,7 +14,7 @@ import android.widget.TextView;
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
  */
-public class FullscreenActivity extends AppCompatActivity  {
+public class FullscreenActivity extends AppCompatActivity implements Observer {
     //UI Content
     TextView displayDegree;
     TextView displayFrequency;
@@ -22,7 +22,7 @@ public class FullscreenActivity extends AppCompatActivity  {
     long lastTimeUpdate;
     SoundCreator sound = new SoundCreator(SoundCreator.CHANNEL_LEFT);
     TiltedSensor tiltedSensor;
-    SoundCreator sound = new SoundCreator();
+
 
 
 
@@ -106,9 +106,6 @@ public class FullscreenActivity extends AppCompatActivity  {
         mControlsView = findViewById(R.id.fullscreen_content_controls);
         mContentView = findViewById(R.id.fullscreen_content);
 
-        //Incializace lasttimeupdate
-
-
         // Set up the user interaction to manually show or hide the system UI.
         mContentView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -117,7 +114,11 @@ public class FullscreenActivity extends AppCompatActivity  {
             }
         });
 
-        tiltedSensor = new TiltedSensor(this);
+        ObservableImpl observableImpl = new ObservableImpl();
+        observableImpl.addObserver(sound);
+        observableImpl.addObserver(this);
+        tiltedSensor = new TiltedSensor(this,observableImpl);
+
 
         // Upon interacting with UI controls, delay any scheduled hide()
         // operations to prevent the jarring behavior of controls going away
@@ -198,10 +199,10 @@ public class FullscreenActivity extends AppCompatActivity  {
         tiltedSensor.RegisterSensor();
     }
 
-    float[] mGravity;
-    float[] mGeomagnetic;
 
-
-
-
+    @Override
+    public void update(double degree) {
+        displayDegree.setText(String.valueOf(degree) + " °");
+        displayFrequency.setText(String.valueOf(100 + degree * 2) + " Hz, pulse 1 ms");
+    }
 }
