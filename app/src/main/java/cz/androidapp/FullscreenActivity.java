@@ -20,7 +20,8 @@ public class FullscreenActivity extends AppCompatActivity implements Observer {
     TextView displayFrequency;
     Button dummyButton;
     long lastTimeUpdate;
-    SoundCreator sound = new SoundCreator(SoundCreator.CHANNEL_LEFT);
+    SoundCreator soundLeft;
+    SoundCreator soundRight;
     TiltedSensor tiltedSensor;
 
 
@@ -115,10 +116,11 @@ public class FullscreenActivity extends AppCompatActivity implements Observer {
         });
 
         ObservableImpl observableImpl = new ObservableImpl();
-        observableImpl.addObserver(sound);
+        //observableImpl.addObserver(sound);
         observableImpl.addObserver(this);
         tiltedSensor = new TiltedSensor(this,observableImpl);
-
+        soundLeft = new SoundCreator(SoundCreator.CHANNEL_LEFT);
+        soundRight = new SoundCreator(SoundCreator.CHANNEL_RIGHT);
 
         // Upon interacting with UI controls, delay any scheduled hide()
         // operations to prevent the jarring behavior of controls going away
@@ -131,10 +133,10 @@ public class FullscreenActivity extends AppCompatActivity implements Observer {
         dummyButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (sound.isPlaying()) {
-                    sound.stop();
+                if (soundLeft.isPlaying()) {
+                    soundLeft.stop();
                 } else {
-                    // sound.playLast();
+                    soundLeft.playLast();
                 }
             }
         });
@@ -202,7 +204,29 @@ public class FullscreenActivity extends AppCompatActivity implements Observer {
 
     @Override
     public void update(double degree) {
-        displayDegree.setText(String.valueOf(degree) + " °");
-        displayFrequency.setText(String.valueOf(100 + degree * 2) + " Hz, pulse 1 ms");
+        displayDegree.setText("Degree: " + String.valueOf(degree) + " °\n");
+        if(degree<0) {
+            soundLeft.playSquare(10 + Math.abs(degree)*5,1);
+            soundRight.playLinear(10);
+            soundRight.setAmplitude(-0.5);
+        } else {
+            soundLeft.playSquare(10 + Math.abs(degree)*5,1);
+            soundRight.playLinear(10);
+            soundRight.setAmplitude(0.5);
+        }
+        displayFrequency.setText(
+                "Channel: " + soundLeft.getChannel() + "\n" +
+                "Frequency: " + soundLeft.getFrequency() + " Hz\n" +
+                "PulseWidth: " + soundLeft.getPulseWidth() + " ms\n" +
+                        "SignalType: " + soundLeft.getSignalType() + "\n" +
+                        "Amplitude: " + soundLeft.getAmplitude() + "\n" +
+                "Playing: " + soundLeft.isPlaying() + "\n\n" +
+                "Channel: " + soundRight.getChannel() + "\n" +
+                        "Frequency: " + soundRight.getFrequency() + " Hz\n" +
+                        "PulseWidth: " + soundRight.getPulseWidth() + " ms\n" +
+                        "SignalType: " + soundRight.getSignalType() + "\n" +
+                        "Amplitude: " + soundRight.getAmplitude() + "\n" +
+                        "Playing: " + soundRight.isPlaying()
+        );
     }
 }

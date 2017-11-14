@@ -3,7 +3,6 @@ package cz.androidapp;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
-import android.net.wifi.p2p.WifiP2pManager;
 import android.support.annotation.IntDef;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -12,10 +11,11 @@ import java.lang.annotation.RetentionPolicy;
  * Created by krnansky on 10.11.2017.
  */
 
-public class SoundCreator implements Observer {
-    public static final int CHANNEL_LEFT = 1;
-    public static final int CHANNEL_RIGHT = 0;
-    public static final int CHANNEL_BOTH = 2;
+public class SoundCreator //implements Observer {
+{
+    static final int CHANNEL_LEFT = 1;
+    static final int CHANNEL_RIGHT = 0;
+    static final int CHANNEL_BOTH = 2;
     private int SIGNAL_TYPE = 0; //sinus, square, linear
     private short AMPLITUDE = 32767; // amplitude minimum -32767, maximum +32767
     private int CHANNELS = 0;
@@ -28,61 +28,150 @@ public class SoundCreator implements Observer {
     private int BUFFER_SIZE = AudioTrack.getMinBufferSize(SAMPLE_RATE, CHANNEL_OUT, ENCODING);
     private double FREQUENCY = 200; //Hz
     private double PULSE_WIDTH = 1; //ms
+    private boolean LEFT = false;
+    private boolean RIGHT = false;
     private boolean ISPLAYING = false;
     private AudioTrack sound;
     private Thread soundThread;
+    private short[] samples;
 
-    @Override
+/*    @Override
     public void update(double degree) {
         playSquare(100 + degree * 2, 1);
-    }
+    }*/
 
     // Declare the @IntDef for these constants:
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef ({CHANNEL_RIGHT, CHANNEL_LEFT, CHANNEL_BOTH})
-    private @interface Channels{}
+    @IntDef({CHANNEL_RIGHT, CHANNEL_LEFT, CHANNEL_BOTH})
+    private @interface Channels {
+    }
 
     SoundCreator(@Channels int channel) {
         sound = new AudioTrack(STREAM, SAMPLE_RATE, CHANNEL_OUT, ENCODING, BUFFER_SIZE, MODE);
+        setChannel(channel);
+    }
+
+    public void setChannel(@Channels int channel) {
         this.CHANNELS = channel;
+        switch (channel) {
+            case 1:
+                LEFT = true;
+                RIGHT = false;
+                break;
+            case 0:
+                LEFT = false;
+                RIGHT = true;
+                break;
+            case 2:
+                LEFT = true;
+                RIGHT = true;
+                break;
+        }
     }
 
-    public void setChannel(@Channels int channel){
-    this.CHANNELS = channel;
+    public void setAmplitude(double AMPLITUDE) {
+        this.AMPLITUDE = (short) (AMPLITUDE * 32767);
     }
 
-    public int getChannel(){
-    return CHANNELS;
+    public String getChannel() {
+        String text = null;
+        switch (CHANNELS) {
+            case 1:
+                text = "Left";
+                break;
+            case 0:
+                text = "Right";
+                break;
+            case 2:
+                text = "Both";
+        }
+        return text;
+    }
+
+    public short getAmplitude() {
+        return AMPLITUDE;
+    }
+
+    public double getFrequency() {
+        return FREQUENCY;
+    }
+
+    public double getPulseWidth() {
+        return PULSE_WIDTH;
     }
 
     public int getSamplesLength() {
         return SAMPLES_LENGTH;
     }
 
-    public boolean isPlaying() {
-        return ISPLAYING;
+    public String getSignalType() {
+        String text = null;
+        switch (SIGNAL_TYPE) {
+            case 1:
+                text = "Square";
+                break;
+            case 0:
+                text = "Sinus";
+                break;
+            case 2:
+                text = "Linear";
+        }
+        return text;
     }
 
     public int getBufferSize() {
         return BUFFER_SIZE;
     }
 
-    public void playSquare(double frequency, double pulseWidth){
+    public void playSquare(double frequency, double pulseWidth) {
         if (!ISPLAYING) {
-            sound.play();
-            ISPLAYING = true;
-            soundThread = new Thread(soundGenerator);
-            soundThread.start();
-        } else {
 
+            start();
+        } else {
+            // co když už hraje ?
         }
+        SIGNAL_TYPE = 1;
         this.FREQUENCY = frequency;
         this.PULSE_WIDTH = pulseWidth;
     }
 
-    public void stop(){
-        sound.stop();
+    public void playSinus(double frequency) {
+        if (!ISPLAYING) {
+
+            start();
+        } else {
+            // co když už hraje ?
+        }
+        SIGNAL_TYPE = 0;
+        this.FREQUENCY = frequency;
+    }
+
+    public void playLinear(double pulseWidth) {
+        if (!ISPLAYING) {
+
+            start();
+        } else {
+            // co když už hraje ?
+        }
+        SIGNAL_TYPE = 2;
+        this.PULSE_WIDTH = pulseWidth;
+        FREQUENCY = 0;
+    }
+
+    private void start(){
+        sound.play();
+        ISPLAYING = true;
+        soundThread = new Thread(soundGenerator);
+        soundThread.start();
+    }
+
+    void stop(){
         ISPLAYING = false;
+        sound.stop();
+    }
+
+    boolean isPlaying() {
+        return ISPLAYING;
     }
 
     public void playLast(){
@@ -96,18 +185,14 @@ public class SoundCreator implements Observer {
 
         public void run() {
             Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
-
             while (ISPLAYING) {
-
                 short samples[]; //pole pro buffer
                     switch (SIGNAL_TYPE) {
-                        case 0: samples = square(FREQUENCY, PULSE_WIDTH, SAMPLE_RATE);
+                        case 1: samples = square(FREQUENCY, PULSE_WIDTH, SAMPLE_RATE);
                             break;
-                        case 1: samples = sinus(FREQUENCY, SAMPLE_RATE);
+                        case 0: default: samples = sinus(FREQUENCY, SAMPLE_RATE);
                             break;
-                        case 2: samples = linear(SAMPLES_LENGTH);
-                            break;
-                        default: samples = sinus(FREQUENCY, SAMPLE_RATE);
+                        case 2: samples = linear(PULSE_WIDTH, SAMPLE_RATE);
                             break;
                     }
                 sound.write(samples, 0, samples.length);
@@ -116,36 +201,38 @@ public class SoundCreator implements Observer {
         }
     };
 
-    private short[] sinus(double frequncy, int sampleRate) {
-        int samplesLenght = 2 * (int) ((float) sampleRate / frequncy); //kolik frame má jedna perioda
+    private short[] sinus(double frequency, int sampleRate) {
+        int samplesLenght = 2 * (int) ((float) sampleRate / frequency); //kolik frame má jedna perioda
         double twopi = 2 * Math.PI;
         double inkrement = 0;
-        short[] samples = new short[samplesLenght]; //pole frame
+        //pole frame
+        samples = new short[samplesLenght];
         for (int i = 0; i < samples.length; i += 2) {
-
-            samples[i + 1] = (short) (AMPLITUDE * Math.sin(inkrement)); //amplituda fáze pro frame
-            inkrement += twopi * frequncy / samples.length;  //inkrement fáze
+            if(LEFT)samples[i]= (short)(AMPLITUDE * Math.sin(inkrement)); //amplituda fáze pro frame -levý
+            if(RIGHT)samples[i + 1] = (short) (AMPLITUDE * Math.sin(inkrement)); //amplituda fáze pro frame -pravý
+            inkrement += (float)(twopi * frequency / sampleRate);  //inkrement fáze
         }
         return samples;
     }
 
-    private short[] square(double frequncy, double pulseWidth, int sampleRate) {
-        int samplesLenght = 2 * (int) ((float) sampleRate / frequncy); //kolik frame má jedna perioda
+    private short[] square(double frequency, double pulseWidth, int sampleRate) {
+        int samplesLenght = 2 * (int) ((float) sampleRate / frequency); //kolik frame má jedna perioda
         short[] samples = new short[samplesLenght]; //pole frame
         for (int i = 0; i < samples.length; i += 2) {
             if (i < (int) (pulseWidth * sampleRate / 1000)) {
-                samples[i + 1] = AMPLITUDE; //amplituda fáze pro frame -levý
-            } else {
-                samples[i + 1] = 0;
+                if(LEFT)samples[i] = AMPLITUDE; //amplituda fáze pro frame -levý
+                if(RIGHT)samples[i + 1] = AMPLITUDE; //amplituda fáze pro frame -pravý
             }
         }
         return samples;
     }
 
-    private short[] linear(int samplesLength) {
+    private short[] linear(double pulseWidth, int sampleRate) {
+        int samplesLength = 2 * (int) (pulseWidth * sampleRate / 1000); //kolik frame má jedna perioda
         short[] samples = new short[samplesLength]; //pole frame
         for (int i = 0; i < samples.length; i += 2) {
-            samples[i + 1] = AMPLITUDE; //amplituda fáze pro frame -levý
+            if(LEFT)samples[i] = AMPLITUDE; //amplituda fáze pro frame -pravý
+            if(RIGHT)samples[i + 1] = AMPLITUDE; //amplituda fáze pro frame -levý
         }
         return samples;
     }
