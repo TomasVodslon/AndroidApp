@@ -123,44 +123,27 @@ public class SoundCreator //implements Observer {
         return BUFFER_SIZE;
     }
 
-    public void playSquare(double frequency, double pulseWidth) {
-        if (!ISPLAYING) {
-
-            start();
-        } else {
-            // co když už hraje ?
-        }
+    public void Square(double frequency, double pulseWidth) {
         SIGNAL_TYPE = 1;
         this.FREQUENCY = frequency;
         this.PULSE_WIDTH = pulseWidth;
     }
 
-    public void playSinus(double frequency) {
-        if (!ISPLAYING) {
-
-            start();
-        } else {
-            // co když už hraje ?
-        }
+    public void Sinus(double frequency) {
         SIGNAL_TYPE = 0;
         this.FREQUENCY = frequency;
+        PULSE_WIDTH = 0;
     }
 
-    public void playLinear(double pulseWidth) {
-        if (!ISPLAYING) {
-
-            start();
-        } else {
-            // co když už hraje ?
-        }
+    public void Linear(double pulseWidth) {
         SIGNAL_TYPE = 2;
         this.PULSE_WIDTH = pulseWidth;
         FREQUENCY = 0;
     }
 
-    private void start(){
-        sound.play();
+    public void play(){
         ISPLAYING = true;
+        sound.play();
         soundThread = new Thread(soundGenerator);
         soundThread.start();
     }
@@ -172,13 +155,6 @@ public class SoundCreator //implements Observer {
 
     boolean isPlaying() {
         return ISPLAYING;
-    }
-
-    public void playLast(){
-        if (!ISPLAYING) {
-            sound.play();
-            ISPLAYING = true;
-        }
     }
 
     private Runnable soundGenerator = new Runnable() {

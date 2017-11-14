@@ -136,7 +136,12 @@ public class FullscreenActivity extends AppCompatActivity implements Observer {
                 if (soundLeft.isPlaying()) {
                     soundLeft.stop();
                 } else {
-                    soundLeft.playLast();
+                    soundLeft.play();
+                }
+                if (soundRight.isPlaying()) {
+                    soundRight.stop();
+                } else {
+                    soundRight.play();
                 }
             }
         });
@@ -206,12 +211,12 @@ public class FullscreenActivity extends AppCompatActivity implements Observer {
     public void update(double degree) {
         displayDegree.setText("Degree: " + String.valueOf(degree) + " °\n");
         if(degree<0) {
-            soundLeft.playSquare(10 + Math.abs(degree)*5,1);
-            soundRight.playLinear(10);
+            soundLeft.Square(10 + Math.abs(degree)*5,1);
+            soundRight.Linear(10);
             soundRight.setAmplitude(-0.5);
         } else {
-            soundLeft.playSquare(10 + Math.abs(degree)*5,1);
-            soundRight.playLinear(10);
+            soundLeft.Square(10 + Math.abs(degree)*5,1);
+            soundRight.Linear(10);
             soundRight.setAmplitude(0.5);
         }
         displayFrequency.setText(
